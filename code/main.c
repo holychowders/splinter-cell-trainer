@@ -1,51 +1,90 @@
+#include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdint.h>
 
+/** ** GENERIC TYPES ** **/
 typedef uint8_t u8;
 typedef int32_t bool;
 #define false 0
 #define true 1
 
-// NOTE: THE OFFSET IS DIFFERENT FOR DIFFERENT LEVELS
-// Flag: bNoThermalAvailable (available in the first two levels of the game)
-static const int nothermal_flag_size = 19;
-static const size_t nothermal_offset = 0x0000182B;
-static const char nothermal_original_bytes[nothermal_flag_size] = "bNoThermalAvailable";
-static const char nothermal_patchbytes[nothermal_flag_size] = {0x00};
+/** ** PATHS ** **/
+static const char s_training_level_part_1[] =
+    "C:/Program Files (x86)/Steam/steamapps/common/Splinter Cell/maps/0_0_2_Training.scl";
 
-int main(void) {
-    puts("Splinter Cell Basic Hacks Trainer");
-    char s_training_level_part_1[] =
-        "C:/Program Files (x86)/Steam/steamapps/common/Splinter Cell/maps/0_0_2_Training.scl";
+/** ** GAME FLAG OFFSETS ** **/
+#define NOTHERMAL_FLAG_OFFSET 0x0000182B
 
-    { // Training level part 1
+/** ** GAME FLAG DATA ** **/
+#define NOTHERMAL_FLAG_SIZE 19
+static const char nothermal_flag_original_bytes[NOTHERMAL_FLAG_SIZE] = "bNoThermalAvailable";
+static const char nothermal_flag_patch_bytes[NOTHERMAL_FLAG_SIZE] = {0};
+
+/** ** MOD FLAGS ** **/
+static bool g_mod_thermal;
+static bool g_mod_thermal_enable;
+
+/** ** FUNCTIONS ** **/
+static bool streq(char* str1, char* str2) {
+    return strcmp(str1, str2) == 0;
+}
+
+static void exit_with_help_message(char** argv) {
+    puts("Primary syntax:");
+    printf("  %s <hack> [enable|disable]\n", argv[0]);
+    puts("Hacks available:");
+    puts("  thermal - Allow thermal vision on all levels");
+    exit(1); // NOLINT(concurrency-mt-unsafe)
+}
+
+static void parse_arguments(int argc, char** argv) {
+    if (argc == 3) {
+        if (streq(argv[1], "thermal")) {
+            g_mod_thermal = true;
+            if (streq(argv[2], "enable")) {
+                g_mod_thermal_enable = true;
+            } else if (streq(argv[2], "disable")) {
+                g_mod_thermal_enable = false;
+            } else {
+                exit_with_help_message(argv);
+            }
+        } else {
+            exit_with_help_message(argv);
+        }
+    } else {
+        exit_with_help_message(argv);
+    }
+}
+
+int main(int argc, char** argv) {
+    puts("Splinter Cell Trainer");
+    parse_arguments(argc, argv);
+
+    // TODO: This only handles part 1 of the training level, and only the training level (level 2 I think is the only
+    // other level which requires modification)
+    if (g_mod_thermal) {
         FILE* f_training_level_part_1 = {0};
         // FIXME: CLOSE FILE
-        if (0 == fopen_s(&f_training_level_part_1, s_training_level_part_1, "r+b")) {
-            puts("INFO: Opened training level part 1");
-            if (0 == fseek(f_training_level_part_1, nothermal_offset, SEEK_SET)) {
-                puts("INFO: bNoThermalAvailable flag offset seek");
-
-                /** ** MEMORY PATCHES HERE ** **/
-                const bool patch = true;
-                const bool restore = false;
-                size_t objects_written = {0};
-                if (patch) {
-                    objects_written = fwrite(&nothermal_patchbytes, sizeof(nothermal_patchbytes[0]),
-                                             nothermal_flag_size, f_training_level_part_1);
-                } else if (restore) {
-                    objects_written = fwrite(&nothermal_original_bytes, sizeof(nothermal_original_bytes[0]),
-                                             nothermal_flag_size, f_training_level_part_1);
-                }
-
-                if (objects_written == nothermal_flag_size) {
-                    puts("INFO: Patched bNoThermalAvailable");
+        if (fopen_s(&f_training_level_part_1, s_training_level_part_1, "r+b") == 0) {
+            // Seek to patch location
+            if (fseek(f_training_level_part_1, NOTHERMAL_FLAG_OFFSET, SEEK_SET) == 0) {
+                if (g_mod_thermal_enable) {
+                    size_t bytes_written = fwrite(&nothermal_flag_patch_bytes, sizeof(nothermal_flag_patch_bytes[0]),
+                                                  NOTHERMAL_FLAG_SIZE, f_training_level_part_1);
+                    if (bytes_written == NOTHERMAL_FLAG_SIZE) {
+                        puts("Enabled thermal hack");
+                    }
                 } else {
-                    puts("fail");
+                    size_t bytes_written =
+                        fwrite(&nothermal_flag_original_bytes, sizeof(nothermal_flag_original_bytes[0]),
+                               NOTHERMAL_FLAG_SIZE, f_training_level_part_1);
+                    if (bytes_written == NOTHERMAL_FLAG_SIZE) {
+                        puts("Disabled thermal hack");
+                    }
                 }
-
-                rewind(f_training_level_part_1);
             }
+            fclose(f_training_level_part_1);
         }
     }
 }
