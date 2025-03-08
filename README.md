@@ -1,4 +1,4 @@
-# Splinter Cell Trainer (Kind Of)
+# Splinter Cell Trainer
 
 ## Desired Usage Examples
 
