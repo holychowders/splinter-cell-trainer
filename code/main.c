@@ -9,14 +9,48 @@ typedef int32_t bool;
 #define false 0
 #define true 1
 
-/** ** PATHS ** **/
-static const char s_training_level_part_1[] =
+/** ** LEVEL PATHS ** **/
+// Training
+static const char level_path_training_2[] =
     "C:/Program Files (x86)/Steam/steamapps/common/Splinter Cell/maps/0_0_2_Training.scl";
+static const char level_path_training_3[] =
+    "C:/Program Files (x86)/Steam/steamapps/common/Splinter Cell/maps/0_0_3_Training.scl";
 
-/** ** GAME FLAG OFFSETS ** **/
-#define NOTHERMAL_FLAG_OFFSET 0x0000182B
+// Tbilisi
+static const char level_path_tbilisi_0[] =
+    "C:/Program Files (x86)/Steam/steamapps/common/Splinter Cell/maps/1_1_0_Tbilisi.scl";
+static const char level_path_tbilisi_1[] =
+    "C:/Program Files (x86)/Steam/steamapps/common/Splinter Cell/maps/1_1_1_Tbilisi.scl";
+static const char level_path_tbilisi_2[] =
+    "C:/Program Files (x86)/Steam/steamapps/common/Splinter Cell/maps/1_1_2_Tbilisi.scl";
 
-/** ** GAME FLAG DATA ** **/
+// Defense Ministry
+static const char level_path_defense_ministry_1[] =
+    "C:/Program Files (x86)/Steam/steamapps/common/Splinter Cell/maps/1_2_1_Tbilisi.scl";
+static const char level_path_defense_ministry_2[] =
+    "C:/Program Files (x86)/Steam/steamapps/common/Splinter Cell/maps/1_2_2_Tbilisi.scl";
+
+// Caspian Oil Refinery
+static const char level_path_caspian_oil_refinery_2[] =
+    "C:/Program Files (x86)/Steam/steamapps/common/Splinter Cell/maps/1_3_2_Tbilisi.scl";
+static const char level_path_caspian_oil_refinery_3[] =
+    "C:/Program Files (x86)/Steam/steamapps/common/Splinter Cell/maps/1_3_3_Tbilisi.scl";
+
+/** ** NOTHERMAL FLAG OFFSETS ** **/
+#define NOTHERMAL_FLAG_OFFSET_TRAINING_2 0x0000182B
+#define NOTHERMAL_FLAG_OFFSET_TRAINING_3 0x00001B72
+
+#define NOTHERMAL_FLAG_OFFSET_TBILISI_0 0x00002689
+#define NOTHERMAL_FLAG_OFFSET_TBILISI_1 0x000034AD
+#define NOTHERMAL_FLAG_OFFSET_TBILISI_2 0x00002D4F
+
+#define NOTHERMAL_FLAG_OFFSET_DEFENSE_MINISTRY_1 0x000038AE
+#define NOTHERMAL_FLAG_OFFSET_DEFENSE_MINISTRY_2 0x00003624
+
+#define NOTHERMAL_FLAG_OFFSET_CASPIAN_OIL_REFINERY_2 0x00001FFB
+#define NOTHERMAL_FLAG_OFFSET_CASPIAN_OIL_REFINERY_3 0x000037E7
+
+/** ** GAME FLAG STRINGS ** **/
 #define NOTHERMAL_FLAG_SIZE 19
 static const char nothermal_flag_original_bytes[NOTHERMAL_FLAG_SIZE] = "bNoThermalAvailable";
 static const char nothermal_flag_patch_bytes[NOTHERMAL_FLAG_SIZE] = {0};
@@ -25,16 +59,17 @@ static const char nothermal_flag_patch_bytes[NOTHERMAL_FLAG_SIZE] = {0};
 static bool g_mod_thermal;
 static bool g_mod_thermal_enable;
 
-/** ** FUNCTIONS ** **/
+/** ** UTILITIES ** **/
 static bool streq(char* str1, char* str2) {
     return strcmp(str1, str2) == 0;
 }
 
+/** ** TRAINER FUNCTIONS ** **/
 static void exit_with_help_message(char** argv) {
     puts("Primary syntax:");
-    printf("  %s <hack> [enable|disable]\n", argv[0]);
+    printf("  sct <hack> [enable|disable]\n");
     puts("Hacks available:");
-    puts("  thermal - Allow thermal vision on all levels");
+    puts("  thermal - Unlock thermal vision for all levels");
     exit(1); // NOLINT(concurrency-mt-unsafe)
 }
 
@@ -57,34 +92,42 @@ static void parse_arguments(int argc, char** argv) {
     }
 }
 
+static size_t patch_level_flag(const char level_path[], long flag_offset, int flag_size,
+                               const char flag_patch_bytes[]) {
+    size_t bytes_written = {0};
+    FILE* level_file = {0};
+    if (fopen_s(&level_file, level_path, "r+b") == 0) {
+        if (fseek(level_file, flag_offset, SEEK_SET) == 0) {
+            bytes_written = fwrite(flag_patch_bytes, sizeof(flag_patch_bytes[0]), flag_size, level_file);
+        } else {
+            puts("ERROR: Failed to seek to flag patch offset");
+        }
+        fclose(level_file);
+    }
+    return bytes_written;
+}
+
 int main(int argc, char** argv) {
     puts("Splinter Cell Trainer");
     parse_arguments(argc, argv);
 
-    // TODO: This only handles part 1 of the training level, and only the training level (level 2 I think is the only
-    // other level which requires modification)
     if (g_mod_thermal) {
-        FILE* f_training_level_part_1 = {0};
-        // FIXME: CLOSE FILE
-        if (fopen_s(&f_training_level_part_1, s_training_level_part_1, "r+b") == 0) {
-            // Seek to patch location
-            if (fseek(f_training_level_part_1, NOTHERMAL_FLAG_OFFSET, SEEK_SET) == 0) {
-                if (g_mod_thermal_enable) {
-                    size_t bytes_written = fwrite(&nothermal_flag_patch_bytes, sizeof(nothermal_flag_patch_bytes[0]),
-                                                  NOTHERMAL_FLAG_SIZE, f_training_level_part_1);
-                    if (bytes_written == NOTHERMAL_FLAG_SIZE) {
-                        puts("Enabled thermal hack");
-                    }
-                } else {
-                    size_t bytes_written =
-                        fwrite(&nothermal_flag_original_bytes, sizeof(nothermal_flag_original_bytes[0]),
-                               NOTHERMAL_FLAG_SIZE, f_training_level_part_1);
-                    if (bytes_written == NOTHERMAL_FLAG_SIZE) {
-                        puts("Disabled thermal hack");
-                    }
-                }
+        size_t bytes_written = {0};
+        if (g_mod_thermal_enable) {
+            bytes_written = patch_level_flag(level_path_training_2, NOTHERMAL_FLAG_OFFSET_TRAINING_2,
+                                             NOTHERMAL_FLAG_SIZE, nothermal_flag_patch_bytes);
+            if (bytes_written == NOTHERMAL_FLAG_SIZE) {
+                puts("Enabled thermal hack");
             }
-            fclose(f_training_level_part_1);
+        } else {
+            bytes_written = patch_level_flag(level_path_training_2, NOTHERMAL_FLAG_OFFSET_TRAINING_2,
+                                             NOTHERMAL_FLAG_SIZE, nothermal_flag_original_bytes);
+            if (bytes_written == NOTHERMAL_FLAG_SIZE) {
+                puts("Disabled thermal hack");
+            }
+        }
+        if (bytes_written != NOTHERMAL_FLAG_SIZE) {
+            puts("ERROR: Something went wrong during patch");
         }
     }
 }
