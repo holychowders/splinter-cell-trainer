@@ -166,7 +166,7 @@ static void patch_thermal(void) {
             puts("Disabled thermal hack");
         }
     }
-    if (bytes_written != NOTHERMAL_FLAG_SIZE) {
+    if (bytes_written != NOTHERMAL_TOTAL_SIZE_TO_WRITE) {
         puts("ERROR: Something went wrong during patch");
     }
 }
