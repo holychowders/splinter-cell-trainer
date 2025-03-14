@@ -66,10 +66,10 @@ static bool streq(char* str1, char* str2) {
 
 /** ** TRAINER FUNCTIONS ** **/
 static void exit_with_help_message(void) {
-    puts("Primary syntax:");
-    printf("  sct <hack> [enable|disable]\n");
-    puts("Hacks available:");
-    puts("  thermal - Unlock thermal vision for all levels");
+    fputs("Primary syntax:\n", stderr);
+    fprintf(stderr, "  sct <hack> [enable|disable]\n");
+    fputs("Hacks available:\n", stderr);
+    fputs("  thermal - Unlock thermal vision for all levels\n", stderr);
     exit(1); // NOLINT(concurrency-mt-unsafe)
 }
 
@@ -100,7 +100,7 @@ static size_t patch_level_flag(const char level_path[], long flag_offset, int fl
         if (fseek(level_file, flag_offset, SEEK_SET) == 0) {
             bytes_written = fwrite(flag_patch_bytes, sizeof(flag_patch_bytes[0]), flag_size, level_file);
         } else {
-            puts("ERROR: Failed to seek to flag patch offset");
+            fputs("ERROR: Failed to seek to flag patch offset", stderr);
         }
         fclose(level_file);
     }
@@ -167,7 +167,7 @@ static void patch_thermal(void) {
         }
     }
     if (bytes_written != NOTHERMAL_TOTAL_SIZE_TO_WRITE) {
-        puts("ERROR: Something went wrong during patch");
+        fputs("ERROR: Something went wrong during patch", stderr);
     }
 }
 
