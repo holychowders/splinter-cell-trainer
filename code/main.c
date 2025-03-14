@@ -66,10 +66,10 @@ static bool streq(char* str1, char* str2) {
 
 /** ** TRAINER FUNCTIONS ** **/
 static void exit_with_help_message(void) {
-    fputs("Primary syntax:\n", stderr);
-    fprintf(stderr, "  sct <hack> [enable|disable]\n");
-    fputs("Hacks available:\n", stderr);
-    fputs("  thermal - Unlock thermal vision for all levels\n", stderr);
+    (void)fputs("Primary syntax:\n", stderr);
+    (void)fprintf(stderr, "  sct <hack> [enable|disable]\n");
+    (void)fputs("Hacks available:\n", stderr);
+    (void)fputs("  thermal - Unlock thermal vision for all levels\n", stderr);
     exit(1); // NOLINT(concurrency-mt-unsafe)
 }
 
@@ -100,9 +100,11 @@ static size_t patch_level_flag(const char level_path[], long flag_offset, int fl
         if (fseek(level_file, flag_offset, SEEK_SET) == 0) {
             bytes_written = fwrite(flag_patch_bytes, sizeof(flag_patch_bytes[0]), flag_size, level_file);
         } else {
-            fputs("ERROR: Failed to seek to flag patch offset", stderr);
+            (void)fputs("ERROR: Failed to seek to flag patch offset\n", stderr);
+            (void)fclose(level_file);
+            exit(1); // NOLINT(concurrency-mt-unsafe)
         }
-        fclose(level_file);
+        (void)fclose(level_file);
     }
     return bytes_written;
 }
@@ -167,7 +169,8 @@ static void patch_thermal(void) {
         }
     }
     if (bytes_written != NOTHERMAL_TOTAL_SIZE_TO_WRITE) {
-        fputs("ERROR: Something went wrong during patch", stderr);
+        (void)fputs("ERROR: Something went wrong during patch\n", stderr);
+        exit(1); // NOLINT(concurrency-mt-unsafe)
     }
 }
 
@@ -178,4 +181,6 @@ int main(int argc, char** argv) {
     if (g_mod_thermal) {
         patch_thermal();
     }
+
+    return 0;
 }
