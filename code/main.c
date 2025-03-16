@@ -53,7 +53,7 @@ static const char level_path_caspian_oil_refinery_3[] =
 #define NOTHERMAL_FLAG_SIZE 19
 #define NOTHERMAL_TOTAL_SIZE_TO_WRITE (size_t)(NOTHERMAL_FLAG_SIZE * NOTHERMAL_FLAG_OFFSET_COUNT)
 static const char nothermal_flag_original_bytes[NOTHERMAL_FLAG_SIZE] = "bNoThermalAvailable";
-static const char nothermal_flag_patch_bytes[NOTHERMAL_FLAG_SIZE] = {0};
+static const char nothermal_flag_patch_bytes[NOTHERMAL_FLAG_SIZE] = {' '};
 
 /** ** MOD FLAGS ** **/
 static bool g_mod_thermal;
