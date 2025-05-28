@@ -1,5 +1,7 @@
 # Splinter Cell Trainer
 
+Small program to enable cheats in Splinter Cell (2002)
+
 ## Desired Usage Examples
 
 ```
